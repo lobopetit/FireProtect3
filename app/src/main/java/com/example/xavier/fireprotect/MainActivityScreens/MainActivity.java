@@ -1,6 +1,9 @@
 package com.example.xavier.fireprotect.MainActivityScreens;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -8,6 +11,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -18,6 +22,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.xavier.fireprotect.MenuActivityScreens.Help;
@@ -42,11 +48,16 @@ public class MainActivity extends AppCompatActivity
 
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     private static final String TAG = "MainActivity";
+    private ProgressBar mRegistrationProgressBar;
+    private BroadcastReceiver mRegistrationBroadcastReceiver;
+    private TextView mInformationTextView;
+    private boolean isReceiverRegistered;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        registerToken();
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         configureMessaging();
@@ -79,22 +90,7 @@ public class MainActivity extends AppCompatActivity
         startActivity(intent);
     }
 
-    public void onClickMap (View v){
-
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                Messaging.Builder builder = new Messaging.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null);
-                Messaging messaging = builder.build();
-                /*try {
-                    //messaging.MessagingEndpoint().sendMessage("Noves Mesures").execute();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }*/
-                return null;
-            }
-        }.execute();
-
+    public void onClickMap (View v) {
         Intent intent = new Intent(this, Map.class);
         startActivity(intent);
     }
@@ -191,6 +187,42 @@ public class MainActivity extends AppCompatActivity
             return false;
         }
         return true;
+    }
+
+    private void registerToken() {
+        mRegistrationBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                mRegistrationProgressBar.setVisibility(ProgressBar.GONE);
+                SharedPreferences sharedPreferences =
+                        PreferenceManager.getDefaultSharedPreferences(context);
+                boolean sentToken = sharedPreferences
+                        .getBoolean("sentTokenToServer", false);
+                if (sentToken) {
+                    mInformationTextView.setText(getString(R.string.gcm_send_message));
+                } else {
+                    mInformationTextView.setText(getString(R.string.token_error_message));
+                }
+            }
+        };
+        mInformationTextView = (TextView) findViewById(R.id.informationTextView);
+
+        // Registering BroadcastReceiver
+        registerReceiver();
+
+        if (checkPlayServices()) {
+            // Start IntentService to register this application with GCM.
+            Intent intent = new Intent(this, RegistrationIntentService.class);
+            startService(intent);
+        }
+    }
+
+    private void registerReceiver(){
+        if(!isReceiverRegistered) {
+            LocalBroadcastManager.getInstance(this).registerReceiver(mRegistrationBroadcastReceiver,
+                    new IntentFilter("registrationComplete"));
+            isReceiverRegistered = true;
+        }
     }
 
 }

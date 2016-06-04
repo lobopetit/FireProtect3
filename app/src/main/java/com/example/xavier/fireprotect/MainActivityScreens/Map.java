@@ -2,6 +2,7 @@ package com.example.xavier.fireprotect.MainActivityScreens;
 
 
 import android.annotation.SuppressLint;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -9,6 +10,7 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 
 import com.example.xavier.fireprotect.R;
+import com.example.xavier.myapplication.backend.messaging.Messaging;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -16,6 +18,11 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.api.client.extensions.android.http.AndroidHttp;
+import com.google.api.client.extensions.android.json.AndroidJsonFactory;
+
+import java.io.IOException;
+import java.util.List;
 
 
 /**
@@ -44,6 +51,20 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                Messaging.Builder builder = new Messaging.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null);
+                Messaging message = builder.build();
+                try {
+                    message.MessagingEndpoint().sendMessage("Dades Actualitzades").execute();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+        }.execute();
 
     }
 
@@ -76,13 +97,14 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                         mapView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                     }
                     showCatalunya(null);
-                    addMarkers();
+                    addExampleMarkers();
+                    //addRealMarkers();
                 }
             });
         }
     }
 
-    private void addMarkers() {
+    private void addExampleMarkers() {
         mMap.addMarker(new MarkerOptions()
                 .position(PRADES)
                 .title("Muntanyes de Prades")
@@ -113,4 +135,21 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                 .title("Massís de l'Albera")
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
     }
+
+    /*private void addRealMarkers() {
+        new AsyncTask<Void, Void, List<EventBean>>() {
+            @Override
+            protected List<EventBean> doInBackground(Void... params) {
+                FireProtectAPI.Builder builder = new FireProtectAPI.Builder(AndroidHttp.newCompatibleTransport(),
+                        new AndroidJsonFactory(), null);
+                FireProtectAPI api = builder.build();
+                try {
+                    return api.getMesures().execute().getItems();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+        };
+    }*/
 }

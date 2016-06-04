@@ -93,7 +93,8 @@ public class RegistrationIntentService extends IntentService {
      */
     private void sendRegistrationToServer(String token) throws IOException {
         Registration.Builder builder = new Registration.Builder(AndroidHttp.newCompatibleTransport(),
-                new AndroidJsonFactory(), null);
+                new AndroidJsonFactory(), null)
+                .setRootUrl("https://fireprotect-b6240.appspot.com/_ah/api/");
         Registration registration = builder.build();
         registration.register(token).execute();
     }
