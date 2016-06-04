@@ -58,7 +58,7 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                 Messaging.Builder builder = new Messaging.Builder(AndroidHttp.newCompatibleTransport(), new AndroidJsonFactory(), null);
                 Messaging message = builder.build();
                 try {
-                    message.MessagingEndpoint().sendMessage("Dades Actualitzades").execute();
+                    message.messagingEndpoint().sendMessage("Dades Actualitzades").execute();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
